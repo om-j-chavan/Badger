@@ -14,27 +14,29 @@ import type { Warning, Settings, MonthlyReflection } from '@/types';
 // ============================================
 
 export default function HomePage() {
-  // Check if running on Vercel (show landing page)
-  const [isVercel, setIsVercel] = useState(false);
-
-  useEffect(() => {
-    // Check if API is accessible (not on Vercel serverless)
-    fetch('/api/settings')
-      .then(res => {
-        if (!res.ok) setIsVercel(true);
-      })
-      .catch(() => setIsVercel(true));
-  }, []);
-
-  // Show landing page if on Vercel
-  if (isVercel) {
-    return <VercelLanding />;
-  }
+  // Check if running on Vercel by hostname
+  const [showLanding, setShowLanding] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [showReflectionModal, setShowReflectionModal] = useState(false);
   const [previousReflection, setPreviousReflection] = useState<string | null>(null);
+
+  // Check if on Vercel and toggle landing page
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    // Show landing page if on Vercel domain, otherwise show app
+    if (hostname.includes('vercel.app')) {
+      setShowLanding(true);
+    } else {
+      setShowLanding(false);
+    }
+  }, []);
+
+  // Show landing page on Vercel
+  if (showLanding) {
+    return <VercelLanding />;
+  }
 
   // Fetch warnings
   useEffect(() => {
