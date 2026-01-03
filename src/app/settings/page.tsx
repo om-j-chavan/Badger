@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card, Button, Input, Select, Modal, ConfirmDialog, Badge } from '@/components/ui';
-import type { Settings, Category, Mode, Account, Tag, Template, WeekStartDay } from '@/types';
+import type { Settings, Category, Mode, Account, Tag, Template, WeekStartDay, AppMode, Theme, Language } from '@/types';
+import { useApp } from '@/contexts/AppContext';
+import { t } from '@/lib/translations';
 
 // ============================================
 // BADGER - Settings Page
@@ -12,7 +14,8 @@ import type { Settings, Category, Mode, Account, Tag, Template, WeekStartDay } f
 type SettingsTab = 'limits' | 'preferences' | 'data' | 'credit-cards' | 'categories' | 'modes' | 'accounts' | 'tags' | 'templates';
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('limits');
+  const { language, appMode } = useApp();
+  const [activeTab, setActiveTab] = useState<SettingsTab>('preferences');
   const [settings, setSettings] = useState<Settings | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [modes, setModes] = useState<Mode[]>([]);
@@ -81,17 +84,22 @@ export default function SettingsPage() {
     }
   };
 
-  const tabs = [
-    { id: 'limits' as const, label: 'Limits & Thresholds', icon: '⚙️' },
-    { id: 'preferences' as const, label: 'Preferences', icon: '🎨' },
-    { id: 'data' as const, label: 'Data Safety', icon: '💾' },
-    { id: 'credit-cards' as const, label: 'Credit Cards', icon: '💳' },
-    { id: 'categories' as const, label: 'Categories', icon: '📁' },
-    { id: 'modes' as const, label: 'Payment Modes', icon: '💰' },
-    { id: 'accounts' as const, label: 'Accounts', icon: '🏦' },
-    { id: 'tags' as const, label: 'Tags', icon: '🏷️' },
-    { id: 'templates' as const, label: 'Templates', icon: '📋' },
+  // Filter sections based on app mode
+  const allSections = [
+    // Simple & Advanced
+    { id: 'preferences' as const, labelKey: 'preferences', icon: '🎨', modes: ['simple', 'advanced'] },
+    { id: 'data' as const, labelKey: 'dataSafety', icon: '💾', modes: ['simple', 'advanced'] },
+    // Advanced only
+    { id: 'limits' as const, labelKey: 'limitsThresholds', icon: '⚙️', modes: ['advanced'] },
+    { id: 'credit-cards' as const, labelKey: 'creditCardSettings', icon: '💳', modes: ['advanced'] },
+    { id: 'categories' as const, labelKey: 'categoriesSettings', icon: '📁', modes: ['advanced'] },
+    { id: 'modes' as const, labelKey: 'paymentModesSettings', icon: '💰', modes: ['advanced'] },
+    { id: 'accounts' as const, labelKey: 'accountsSettings', icon: '🏦', modes: ['advanced'] },
+    { id: 'tags' as const, labelKey: 'tagsSettings', icon: '🏷️', modes: ['advanced'] },
+    { id: 'templates' as const, labelKey: 'templatesSettings', icon: '📋', modes: ['advanced'] },
   ];
+
+  const sections = allSections.filter(section => section.modes.includes(appMode));
 
   if (loading) {
     return (
@@ -108,66 +116,73 @@ export default function SettingsPage() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-semibold text-text-primary">Settings</h1>
-          <p className="text-text-secondary mt-1">Configure your Badger experience</p>
+          <h1 className="text-2xl font-semibold text-text-primary">{t('settingsTitle', language, appMode)}</h1>
+          <p className="text-text-secondary mt-1">{t('settingsDescription', language, appMode)}</p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex flex-wrap gap-2">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all
-                ${
-                  activeTab === tab.id
-                    ? 'bg-primary text-text-primary'
-                    : 'bg-card text-text-secondary hover:bg-divider'
-                }
-              `}
-            >
-              <span>{tab.icon}</span>
-              <span className="hidden sm:inline">{tab.label}</span>
-            </button>
-          ))}
-        </div>
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Left Sidebar - Vertical Navigation */}
+          <div className="lg:col-span-1">
+            <Card>
+              <nav className="space-y-1">
+                {sections.map((section) => (
+                  <button
+                    key={section.id}
+                    onClick={() => setActiveTab(section.id)}
+                    className={`
+                      w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all text-left
+                      ${
+                        activeTab === section.id
+                          ? 'bg-primary/10 text-text-primary border-l-4 border-primary'
+                          : 'text-text-secondary hover:bg-divider/50'
+                      }
+                    `}
+                  >
+                    <span className="text-xl">{section.icon}</span>
+                    <span className="text-sm">{t(section.labelKey, language, appMode)}</span>
+                  </button>
+                ))}
+              </nav>
+            </Card>
+          </div>
 
-        {/* Tab Content */}
-        <div>
-          {activeTab === 'limits' && settings && (
-            <LimitsSettings settings={settings} onSave={saveSettings} saving={saving} />
-          )}
-          {activeTab === 'preferences' && settings && (
-            <PreferencesSettings settings={settings} onSave={saveSettings} saving={saving} />
-          )}
-          {activeTab === 'data' && settings && (
-            <DataSafetySettings settings={settings} />
-          )}
-          {activeTab === 'credit-cards' && (
-            <CreditCardsSettings onRefresh={fetchData} />
-          )}
-          {activeTab === 'categories' && (
-            <CategoriesSettings categories={categories} onRefresh={fetchData} />
-          )}
-          {activeTab === 'modes' && (
-            <ModesSettings modes={modes} onRefresh={fetchData} />
-          )}
-          {activeTab === 'accounts' && (
-            <AccountsSettings accounts={accounts} onRefresh={fetchData} />
-          )}
-          {activeTab === 'tags' && (
-            <TagsSettings tags={tags} onRefresh={fetchData} />
-          )}
-          {activeTab === 'templates' && (
-            <TemplatesSettings
-              templates={templates}
-              categories={categories}
-              modes={modes}
-              accounts={accounts}
-              onRefresh={fetchData}
-            />
-          )}
+          {/* Right Content Area */}
+          <div className="lg:col-span-3">
+            {activeTab === 'limits' && settings && (
+              <LimitsSettings settings={settings} onSave={saveSettings} saving={saving} />
+            )}
+            {activeTab === 'preferences' && settings && (
+              <PreferencesSettings settings={settings} onSave={saveSettings} saving={saving} />
+            )}
+            {activeTab === 'data' && settings && (
+              <DataSafetySettings settings={settings} />
+            )}
+            {activeTab === 'credit-cards' && (
+              <CreditCardsSettings onRefresh={fetchData} />
+            )}
+            {activeTab === 'categories' && (
+              <CategoriesSettings categories={categories} onRefresh={fetchData} />
+            )}
+            {activeTab === 'modes' && (
+              <ModesSettings modes={modes} onRefresh={fetchData} />
+            )}
+            {activeTab === 'accounts' && (
+              <AccountsSettings accounts={accounts} onRefresh={fetchData} />
+            )}
+            {activeTab === 'tags' && (
+              <TagsSettings tags={tags} onRefresh={fetchData} />
+            )}
+            {activeTab === 'templates' && (
+              <TemplatesSettings
+                templates={templates}
+                categories={categories}
+                modes={modes}
+                accounts={accounts}
+                onRefresh={fetchData}
+              />
+            )}
+          </div>
         </div>
       </div>
     </AppShell>
@@ -871,74 +886,217 @@ function PreferencesSettings({
   onSave: (updates: Partial<Settings>) => Promise<void>;
   saving: boolean;
 }) {
+  const { updateAppMode, updateTheme, updateLanguage, language, appMode } = useApp();
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [localSettings, setLocalSettings] = useState(settings);
 
   useEffect(() => {
     setLocalSettings(settings);
   }, [settings]);
 
-  const handleSave = () => {
-    onSave({
-      enableMoodTracking: localSettings.enableMoodTracking,
-      enableRegretTracking: localSettings.enableRegretTracking,
-    });
+  const showSavedFeedback = () => {
+    setSaveStatus('saved');
+    setTimeout(() => setSaveStatus('idle'), 2000);
+  };
+
+  const handleAppModeChange = async (mode: AppMode) => {
+    setLocalSettings({ ...localSettings, appMode: mode });
+    setSaveStatus('saving');
+    await updateAppMode(mode);
+    showSavedFeedback();
+  };
+
+  const handleThemeChange = async (theme: Theme) => {
+    setLocalSettings({ ...localSettings, theme });
+    setSaveStatus('saving');
+    await updateTheme(theme);
+    showSavedFeedback();
+  };
+
+  const handleLanguageChange = async (language: Language) => {
+    setLocalSettings({ ...localSettings, language });
+    setSaveStatus('saving');
+    await updateLanguage(language);
+    showSavedFeedback();
+  };
+
+  const handleToggleChange = async (field: string, value: boolean) => {
+    const updates = { [field]: value };
+    setLocalSettings({ ...localSettings, ...updates });
+    setSaveStatus('saving');
+    await onSave(updates);
+    showSavedFeedback();
   };
 
   return (
     <Card>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-text-primary">Gen-Z Features</h3>
-          <p className="text-sm text-text-secondary mt-1">Enable or disable mood and regret tracking</p>
+          <h3 className="text-lg font-semibold text-text-primary">{t('preferences', language, appMode)}</h3>
+          <p className="text-sm text-text-secondary mt-1">{t('preferencesDescription', language, appMode)}</p>
         </div>
-        <Button onClick={handleSave} loading={saving}>
-          Save Changes
-        </Button>
+        {/* Save Status Indicator */}
+        <div className="flex items-center gap-2">
+          {saveStatus === 'saving' && (
+            <span className="text-sm text-text-secondary animate-pulse">{t('saving', language, appMode)}</span>
+          )}
+          {saveStatus === 'saved' && (
+            <span className="text-sm text-success animate-fade-in flex items-center gap-1">
+              <span>✓</span>
+              <span>{t('saved', language, appMode)}</span>
+            </span>
+          )}
+        </div>
       </div>
 
-      <div className="space-y-6">
-        {/* Mood Tracking */}
-        <div className="flex items-center justify-between p-4 bg-background rounded-xl">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">😊</span>
-            <div>
-              <h4 className="font-medium text-text-primary">Mood Tracking</h4>
-              <p className="text-sm text-text-secondary">Track how you feel about each expense</p>
+      <div className="space-y-8">
+        {/* UI/UX Preferences */}
+        <div>
+          <h4 className="font-semibold text-text-primary mb-4">UI & Experience</h4>
+          <div className="space-y-4">
+            {/* App Mode */}
+            <div className="flex items-center justify-between p-4 bg-background rounded-xl">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🎯</span>
+                <div>
+                  <h5 className="font-medium text-text-primary">{t('appMode', language, appMode)}</h5>
+                  <p className="text-sm text-text-secondary">{t('simpleModeDescription', language, appMode)}</p>
+                </div>
+              </div>
+              <Select
+                options={[
+                  { value: 'simple', label: t('simpleMode', language, appMode) },
+                  { value: 'advanced', label: t('advancedMode', language, appMode) },
+                ]}
+                value={localSettings.appMode}
+                onChange={(e) => handleAppModeChange(e.target.value as AppMode)}
+              />
+            </div>
+
+            {/* Theme */}
+            <div className="flex items-center justify-between p-4 bg-background rounded-xl">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🌓</span>
+                <div>
+                  <h5 className="font-medium text-text-primary">{t('theme', language, appMode)}</h5>
+                  <p className="text-sm text-text-secondary">Choose between light and dark theme</p>
+                </div>
+              </div>
+              <Select
+                options={[
+                  { value: 'light', label: t('lightTheme', language, appMode) },
+                  { value: 'dark', label: t('darkTheme', language, appMode) },
+                ]}
+                value={localSettings.theme}
+                onChange={(e) => handleThemeChange(e.target.value as Theme)}
+              />
+            </div>
+
+            {/* Language */}
+            <div className="flex items-center justify-between p-4 bg-background rounded-xl">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🌐</span>
+                <div>
+                  <h5 className="font-medium text-text-primary">{t('language', language, appMode)}</h5>
+                  <p className="text-sm text-text-secondary">Select your preferred language</p>
+                </div>
+              </div>
+              <Select
+                options={[
+                  { value: 'en', label: 'English' },
+                  { value: 'mr', label: 'मराठी' },
+                ]}
+                value={localSettings.language}
+                onChange={(e) => handleLanguageChange(e.target.value as Language)}
+              />
             </div>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="sr-only peer"
-              checked={localSettings.enableMoodTracking}
-              onChange={(e) =>
-                setLocalSettings({ ...localSettings, enableMoodTracking: e.target.checked })
-              }
-            />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-          </label>
         </div>
 
-        {/* Regret Tracking */}
-        <div className="flex items-center justify-between p-4 bg-background rounded-xl">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">😬</span>
-            <div>
-              <h4 className="font-medium text-text-primary">Regret Tracking</h4>
-              <p className="text-sm text-text-secondary">Mark purchases you regret</p>
+        {/* Gen-Z Features */}
+        <div>
+          <h4 className="font-semibold text-text-primary mb-4">Behavior & Tracking</h4>
+          <div className="space-y-4">
+            {/* Mood Tracking */}
+            <div className="flex items-center justify-between p-4 bg-background rounded-xl">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">😊</span>
+                <div>
+                  <h5 className="font-medium text-text-primary">{t('enableMoodTracking', language, appMode)}</h5>
+                  <p className="text-sm text-text-secondary">{t('moodTrackingDescription', language, appMode)}</p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={localSettings.enableMoodTracking}
+                  onChange={(e) => handleToggleChange('enableMoodTracking', e.target.checked)}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            </div>
+
+            {/* Regret Tracking */}
+            <div className="flex items-center justify-between p-4 bg-background rounded-xl">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">😬</span>
+                <div>
+                  <h5 className="font-medium text-text-primary">{t('enableRegretTracking', language, appMode)}</h5>
+                  <p className="text-sm text-text-secondary">{t('regretTrackingDescription', language, appMode)}</p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={localSettings.enableRegretTracking}
+                  onChange={(e) => handleToggleChange('enableRegretTracking', e.target.checked)}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            </div>
+
+            {/* Impulse Timer */}
+            <div className="flex items-center justify-between p-4 bg-background rounded-xl">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">⏱️</span>
+                <div>
+                  <h5 className="font-medium text-text-primary">{t('enableImpulseTimer', language, appMode)}</h5>
+                  <p className="text-sm text-text-secondary">{t('impulseTimerDescription', language, appMode)}</p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={localSettings.enableImpulseTimer}
+                  onChange={(e) => handleToggleChange('enableImpulseTimer', e.target.checked)}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            </div>
+
+            {/* Auto Backup Reminder */}
+            <div className="flex items-center justify-between p-4 bg-background rounded-xl">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">💾</span>
+                <div>
+                  <h5 className="font-medium text-text-primary">{t('enableBackupReminder', language, appMode)}</h5>
+                  <p className="text-sm text-text-secondary">{t('backupReminderDescription', language, appMode)}</p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={localSettings.enableAutoBackupReminder}
+                  onChange={(e) => handleToggleChange('enableAutoBackupReminder', e.target.checked)}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
             </div>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="sr-only peer"
-              checked={localSettings.enableRegretTracking}
-              onChange={(e) =>
-                setLocalSettings({ ...localSettings, enableRegretTracking: e.target.checked })
-              }
-            />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-          </label>
         </div>
       </div>
     </Card>

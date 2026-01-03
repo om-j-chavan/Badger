@@ -10,6 +10,7 @@ import type {
   Warning,
   VibeScore,
   InvestmentSummary,
+  MonthlySavingsSummary,
 } from '@/types';
 import { getAllCategories } from './categories';
 import { getSettings } from './settings';
@@ -423,12 +424,30 @@ export function calculateVibeScore(date: Date = new Date()): VibeScore {
   const overspendPercentage = weeklyLimit > 0 ? Math.max(0, ((totals.total - weeklyLimit) / weeklyLimit) * 100) : 0;
   const openLiabilitiesPercentage = settings.monthlyCreditLimit > 0 ? (totals.open / settings.monthlyCreditLimit) * 100 : 0;
 
+  // Get current month savings for bonus points
+  const currentDate = date || new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
+  const savingsSummary = getMonthlySavingsSummary(currentYear, currentMonth);
+
+  // Savings rate as percentage of income (if positive)
+  const savingsRate = savingsSummary.incomeTotal > 0
+    ? Math.max(0, (savingsSummary.savings / savingsSummary.incomeTotal) * 100)
+    : 0;
+
   let score = 100;
   score -= Math.min(40, unnecessaryPercentage * 0.8);
   score -= Math.min(25, creditPercentage * 0.5);
   score -= Math.min(25, overspendPercentage * 0.5);
   score -= Math.min(10, openLiabilitiesPercentage * 0.2);
-  score = Math.max(0, Math.round(score));
+
+  // Add bonus points for positive savings (up to +15 points)
+  // 20% savings rate = +15 points, scaling linearly
+  if (savingsRate > 0) {
+    score += Math.min(15, savingsRate * 0.75);
+  }
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
 
   return {
     score,
@@ -436,5 +455,81 @@ export function calculateVibeScore(date: Date = new Date()): VibeScore {
     creditPercentage,
     overspendPercentage,
     openLiabilitiesPercentage,
+    savingsRate,
   };
+}
+
+// Get monthly savings summary for a specific month
+export function getMonthlySavingsSummary(year: number, month: number): MonthlySavingsSummary {
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0, 23, 59, 59);
+  const startStr = format(startDate, 'yyyy-MM-dd');
+  const endStr = format(endDate, 'yyyy-MM-dd');
+
+  // Get income total
+  const incomeTotal = getMonthlyIncomeTotal(year, month);
+
+  // Get expense total (type = 'expense', exclude investments)
+  const expenseResult = db
+    .prepare(
+      `SELECT SUM(e.amount) as total
+       FROM expenses e
+       WHERE e.date >= ? AND e.date <= ?
+       AND e.type = 'expense'`
+    )
+    .get(startStr, endStr) as { total: number | null };
+  const expenseTotal = expenseResult?.total || 0;
+
+  // Get credit paid total (payments made during this month)
+  const creditPaidResult = db
+    .prepare(
+      `SELECT SUM(e.amount) as total
+       FROM expenses e
+       JOIN entries en ON e.id = en.expenseId
+       WHERE en.status = 'closed'
+       AND en.paidDate >= ? AND en.paidDate <= ?
+       AND en.creditCardStatementId IS NOT NULL`
+    )
+    .get(startStr, endStr) as { total: number | null };
+  const creditPaidTotal = creditPaidResult?.total || 0;
+
+  // Get investment total
+  const investmentResult = db
+    .prepare(
+      `SELECT SUM(e.amount) as total
+       FROM expenses e
+       WHERE e.date >= ? AND e.date <= ?
+       AND e.type = 'investment'`
+    )
+    .get(startStr, endStr) as { total: number | null };
+  const investmentTotal = investmentResult?.total || 0;
+
+  // Calculate savings: Income - Expenses - Credit Payments
+  // Note: Investments are tracked separately and don't reduce savings
+  const savings = incomeTotal - expenseTotal - creditPaidTotal;
+
+  return {
+    month,
+    year,
+    incomeTotal,
+    expenseTotal,
+    creditPaidTotal,
+    investmentTotal,
+    savings,
+  };
+}
+
+// Get savings trend for multiple months
+export function getSavingsTrend(months: number = 6): MonthlySavingsSummary[] {
+  const summaries: MonthlySavingsSummary[] = [];
+  const now = new Date();
+
+  for (let i = months - 1; i >= 0; i--) {
+    const date = subMonths(now, i);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    summaries.push(getMonthlySavingsSummary(year, month));
+  }
+
+  return summaries;
 }

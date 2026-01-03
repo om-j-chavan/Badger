@@ -3,7 +3,7 @@
 // ============================================
 
 import db from '../db';
-import type { Settings, WeekStartDay } from '@/types';
+import type { Settings, WeekStartDay, AppMode, Theme, Language } from '@/types';
 
 // Get settings (singleton)
 export function getSettings(): Settings {
@@ -30,6 +30,11 @@ export function getSettings(): Settings {
     enableMoodTracking: Boolean(row.enableMoodTracking),
     enableRegretTracking: Boolean(row.enableRegretTracking),
     lastBackupDate: row.lastBackupDate || null,
+    appMode: (row.appMode || 'advanced') as AppMode,
+    theme: (row.theme || 'light') as Theme,
+    language: (row.language || 'en') as Language,
+    enableImpulseTimer: row.enableImpulseTimer !== undefined ? Boolean(row.enableImpulseTimer) : true,
+    enableAutoBackupReminder: row.enableAutoBackupReminder !== undefined ? Boolean(row.enableAutoBackupReminder) : true,
     updatedAt: row.updatedAt,
   };
 }
@@ -45,6 +50,11 @@ export function updateSettings(
     weekStartDay: WeekStartDay;
     enableMoodTracking: boolean;
     enableRegretTracking: boolean;
+    appMode: AppMode;
+    theme: Theme;
+    language: Language;
+    enableImpulseTimer: boolean;
+    enableAutoBackupReminder: boolean;
   }>
 ): Settings {
   const updates: string[] = [];
@@ -81,6 +91,26 @@ export function updateSettings(
   if (data.enableRegretTracking !== undefined) {
     updates.push('enableRegretTracking = ?');
     values.push(data.enableRegretTracking ? 1 : 0);
+  }
+  if (data.appMode !== undefined) {
+    updates.push('appMode = ?');
+    values.push(data.appMode);
+  }
+  if (data.theme !== undefined) {
+    updates.push('theme = ?');
+    values.push(data.theme);
+  }
+  if (data.language !== undefined) {
+    updates.push('language = ?');
+    values.push(data.language);
+  }
+  if (data.enableImpulseTimer !== undefined) {
+    updates.push('enableImpulseTimer = ?');
+    values.push(data.enableImpulseTimer ? 1 : 0);
+  }
+  if (data.enableAutoBackupReminder !== undefined) {
+    updates.push('enableAutoBackupReminder = ?');
+    values.push(data.enableAutoBackupReminder ? 1 : 0);
   }
 
   if (updates.length > 0) {

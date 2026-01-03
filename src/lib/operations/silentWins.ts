@@ -5,6 +5,7 @@
 import db from '../db';
 import { getSettings } from './settings';
 import { getStreaks } from './streaks';
+import { getMonthlySavingsSummary } from './analytics';
 import type { SilentWin } from '@/types';
 
 export function checkForSilentWins(): SilentWin[] {
@@ -80,6 +81,28 @@ export function checkForSilentWins(): SilentWin[] {
       message: 'Almost no regrets this month! Wise spending! 🧠',
       icon: '🧠',
     });
+  }
+
+  // Check for positive savings
+  const savingsSummary = getMonthlySavingsSummary(year, month + 1);
+  if (savingsSummary.savings > 0) {
+    const savingsRate = savingsSummary.incomeTotal > 0
+      ? (savingsSummary.savings / savingsSummary.incomeTotal) * 100
+      : 0;
+
+    if (savingsRate >= 20) {
+      wins.push({
+        type: 'positive_savings',
+        message: `Saving ${Math.round(savingsRate)}% this month! Financial goals unlocked! 💰`,
+        icon: '💰',
+      });
+    } else if (savingsRate >= 10) {
+      wins.push({
+        type: 'positive_savings',
+        message: `You're saving ${Math.round(savingsRate)}% this month! Keep it going! 📈`,
+        icon: '📈',
+      });
+    }
   }
 
   return wins;

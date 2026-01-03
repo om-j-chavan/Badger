@@ -142,6 +142,18 @@ export default function VibeScoreCard() {
           value={vibeScore.openLiabilitiesPercentage}
           icon="⚠️"
         />
+        {vibeScore.savingsRate !== undefined && vibeScore.savingsRate > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between text-sm">
+              <span className="flex items-center gap-2 text-gray-600">
+                <span>💰</span>
+                Savings Rate (Bonus!)
+              </span>
+              <span className="font-semibold text-primary">{Math.round(vibeScore.savingsRate)}%</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Boosting your vibe score!</p>
+          </div>
+        )}
       </div>
     </div>
   );

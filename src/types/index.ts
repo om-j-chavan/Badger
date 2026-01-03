@@ -8,6 +8,9 @@ export type EntryStatus = 'open' | 'closed';
 export type WeekStartDay = 'sunday' | 'monday';
 export type EntryType = 'expense' | 'investment';
 export type Mood = 'happy' | 'neutral' | 'sad';
+export type AppMode = 'simple' | 'advanced';
+export type Language = 'en' | 'mr';
+export type Theme = 'light' | 'dark';
 
 // ============================================
 // Core Entities
@@ -139,6 +142,11 @@ export interface Settings {
   enableMoodTracking: boolean;
   enableRegretTracking: boolean;
   lastBackupDate: string | null;
+  appMode: AppMode;
+  theme: Theme;
+  language: Language;
+  enableImpulseTimer: boolean;
+  enableAutoBackupReminder: boolean;
   updatedAt: string;
 }
 
@@ -306,10 +314,11 @@ export interface VibeScore {
   creditPercentage: number;
   overspendPercentage: number;
   openLiabilitiesPercentage: number;
+  savingsRate?: number;
 }
 
 export interface SilentWin {
-  type: 'under_limit' | 'streak_milestone' | 'low_regret';
+  type: 'under_limit' | 'streak_milestone' | 'low_regret' | 'positive_savings';
   message: string;
   icon: string;
 }
@@ -407,6 +416,16 @@ export interface CutAnalysis {
     amount: number;
     count: number;
   }[];
+}
+
+export interface MonthlySavingsSummary {
+  month: number;
+  year: number;
+  incomeTotal: number;
+  expenseTotal: number;
+  creditPaidTotal: number;
+  investmentTotal: number;
+  savings: number;
 }
 
 export interface AppExport {

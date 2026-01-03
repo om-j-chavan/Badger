@@ -6,18 +6,51 @@
    BADGER - Global Styles
    ============================================ */
 
-/* Base styles */
+/* Base styles - CSS Variables (set by theme system) */
 :root {
-  --primary: #ADEBB3;
-  --accent: #D3AF37;
-  --background: #F6FBF8;
-  --card: #FFFFFF;
-  --text-primary: #1F2D2A;
-  --text-secondary: #6B7C77;
-  --divider: #E3EFE8;
+  /* Theme colors - dynamically set by JS */
+  --color-primary: #ADEBB3;
+  --color-accent: #D3AF37;
+  --color-background: #F6FBF8;
+  --color-card: #FFFFFF;
+  --color-text-primary: #1F2D2A;
+  --color-text-secondary: #6B7C77;
+  --color-divider: #E3EFE8;
+  --color-border: #E5E7EB;
+
+  /* Legacy variables (for backwards compatibility) */
+  --primary: var(--color-primary);
+  --accent: var(--color-accent);
+  --background: var(--color-background);
+  --card: var(--color-card);
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --divider: var(--color-divider);
+
+  /* Semantic colors */
   --warning: #F5C16C;
   --error: #E58C8C;
   --success: #7FC8A9;
+
+  /* Spacing & typography - adjusted by mode */
+  --base-font-size: 14px;
+  --spacing-base: 1rem;
+
+  /* Transitions */
+  --transition-theme: 150ms ease;
+}
+
+/* Smooth theme transitions */
+* {
+  transition: background-color var(--transition-theme),
+              color var(--transition-theme),
+              border-color var(--transition-theme);
+}
+
+/* Simple Mode adjustments */
+[data-mode="simple"] {
+  --base-font-size: 16px;
+  --spacing-base: 1.5rem;
 }
 
 html {

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="152" height="152" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="152" height="152" fill="#7FC8A9" rx="22.8"/>
+
+  <!-- Badger emoji representation -->
+  <text
+    x="50%"
+    y="50%"
+    font-size="91.2"
+    text-anchor="middle"
+    dominant-baseline="central"
+    font-family="Arial, sans-serif"
+  >
+    🦡
+  </text>
+</svg>

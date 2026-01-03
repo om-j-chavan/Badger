@@ -473,6 +473,54 @@ function runMigrations() {
     db.pragma('user_version = 4');
     console.log('Migration 4 completed');
   }
+
+  // Migration 5: UI/UX Preferences (App Mode, Dark Mode, Language)
+  if (currentVersion < 5) {
+    console.log('Running migration 5: UI/UX Preferences...');
+
+    try {
+      db.exec(`
+        ALTER TABLE settings ADD COLUMN appMode TEXT NOT NULL DEFAULT 'advanced';
+      `);
+    } catch (e) {
+      // Column may already exist
+    }
+
+    try {
+      db.exec(`
+        ALTER TABLE settings ADD COLUMN theme TEXT NOT NULL DEFAULT 'light';
+      `);
+    } catch (e) {
+      // Column may already exist
+    }
+
+    try {
+      db.exec(`
+        ALTER TABLE settings ADD COLUMN language TEXT NOT NULL DEFAULT 'en';
+      `);
+    } catch (e) {
+      // Column may already exist
+    }
+
+    try {
+      db.exec(`
+        ALTER TABLE settings ADD COLUMN enableImpulseTimer INTEGER NOT NULL DEFAULT 1;
+      `);
+    } catch (e) {
+      // Column may already exist
+    }
+
+    try {
+      db.exec(`
+        ALTER TABLE settings ADD COLUMN enableAutoBackupReminder INTEGER NOT NULL DEFAULT 1;
+      `);
+    } catch (e) {
+      // Column may already exist
+    }
+
+    db.pragma('user_version = 5');
+    console.log('Migration 5 completed');
+  }
 }
 
 // Run migrations after seeding

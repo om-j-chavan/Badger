@@ -12,6 +12,8 @@ import { AccountBalanceChart } from '@/components/analytics/AccountBalanceChart'
 import VibeScoreCard from '@/components/analytics/VibeScoreCard';
 import StreakCard from '@/components/analytics/StreakCard';
 import InvestmentChart from '@/components/analytics/InvestmentChart';
+import MonthlySavingsCard from '@/components/analytics/MonthlySavingsCard';
+import SavingsTrendChart from '@/components/analytics/SavingsTrendChart';
 import type {
   CategorySpend,
   MonthlySummary,
@@ -23,6 +25,7 @@ import type {
   TrendStability,
   BudgetAdherence,
   CutAnalysis,
+  MonthlySavingsSummary,
 } from '@/types';
 
 // ============================================
@@ -50,6 +53,8 @@ export default function AnalyticsPage() {
   const [trendStability, setTrendStability] = useState<TrendStability | null>(null);
   const [budgetAdherence, setBudgetAdherence] = useState<BudgetAdherence | null>(null);
   const [cutAnalysis, setCutAnalysis] = useState<CutAnalysis | null>(null);
+  const [currentSavings, setCurrentSavings] = useState<MonthlySavingsSummary | null>(null);
+  const [savingsTrend, setSavingsTrend] = useState<MonthlySavingsSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch analytics data
@@ -73,6 +78,8 @@ export default function AnalyticsPage() {
           trendStabilityRes,
           budgetAdherenceRes,
           cutAnalysisRes,
+          currentSavingsRes,
+          savingsTrendRes,
         ] = await Promise.all([
           fetch(`/api/analytics?type=category-breakdown&year=${year}&month=${month}`),
           fetch('/api/analytics?type=monthly-summaries&months=6'),
@@ -86,6 +93,8 @@ export default function AnalyticsPage() {
           fetch('/api/analytics/trend-stability'),
           fetch('/api/analytics/budget-adherence'),
           fetch('/api/analytics/cut-analysis'),
+          fetch(`/api/savings?year=${year}&month=${month + 1}`),
+          fetch('/api/savings?type=trend&months=6'),
         ]);
 
         const [
@@ -101,6 +110,8 @@ export default function AnalyticsPage() {
           trendStabilityData,
           budgetAdherenceData,
           cutAnalysisData,
+          currentSavingsData,
+          savingsTrendData,
         ] = await Promise.all([
           categoryRes.json(),
           monthlyRes.json(),
@@ -114,6 +125,8 @@ export default function AnalyticsPage() {
           trendStabilityRes.json(),
           budgetAdherenceRes.json(),
           cutAnalysisRes.json(),
+          currentSavingsRes.json(),
+          savingsTrendRes.json(),
         ]);
 
         setCategoryBreakdown(categoryData);
@@ -128,6 +141,8 @@ export default function AnalyticsPage() {
         setTrendStability(trendStabilityData);
         setBudgetAdherence(budgetAdherenceData);
         setCutAnalysis(cutAnalysisData);
+        setCurrentSavings(currentSavingsData.success ? currentSavingsData.data : null);
+        setSavingsTrend(savingsTrendData.success ? savingsTrendData.data : []);
       } catch (error) {
         console.error('Error fetching analytics:', error);
       } finally {
@@ -219,6 +234,11 @@ export default function AnalyticsPage() {
           <StreakCard />
         </div>
 
+        {/* Monthly Savings Summary */}
+        {currentSavings && (
+          <MonthlySavingsCard summary={currentSavings} currency={currency} />
+        )}
+
         {/* Weekly Summary */}
         {weeklySummary && (
           <WeeklySummaryCard summary={weeklySummary} currency={currency} />
@@ -226,6 +246,11 @@ export default function AnalyticsPage() {
 
         {/* Investment Tracking */}
         <InvestmentChart />
+
+        {/* Savings Trend */}
+        {savingsTrend.length > 0 && (
+          <SavingsTrendChart data={savingsTrend} />
+        )}
 
         {/* Maturity Analytics - Bill Forecast */}
         {billForecast && billForecast.totalExpected > 0 && (

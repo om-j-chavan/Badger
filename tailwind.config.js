@@ -8,20 +8,16 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Primary palette
-        primary: '#ADEBB3',
-        accent: '#D3AF37',
+        // Dynamic colors using CSS variables
+        primary: 'var(--color-primary)',
+        accent: 'var(--color-accent)',
+        background: 'var(--color-background)',
+        card: 'var(--color-card)',
+        'text-primary': 'var(--color-text-primary)',
+        'text-secondary': 'var(--color-text-secondary)',
+        divider: 'var(--color-divider)',
 
-        // Background colors
-        background: '#F6FBF8',
-        card: '#FFFFFF',
-
-        // Text colors
-        'text-primary': '#1F2D2A',
-        'text-secondary': '#6B7C77',
-
-        // Utility colors
-        divider: '#E3EFE8',
+        // Static utility colors
         warning: '#F5C16C',
         error: '#E58C8C',
         success: '#7FC8A9',
