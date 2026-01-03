@@ -61,7 +61,11 @@
       "Bash(rd /s /q .next)",
       "Bash(if not exist public mkdir public)",
       "Bash(if not exist \"c:\\\\Claude apps\\\\Badger\\\\public\" mkdir \"c:\\\\Claude apps\\\\Badger\\\\public\")",
-      "Bash(node scripts/generate-icons.js:*)"
+      "Bash(node scripts/generate-icons.js:*)",
+      "Bash(where:*)",
+      "Bash(vercel --version:*)",
+      "Bash(test:*)",
+      "Bash(vercel:*)"
     ]
   }
 }

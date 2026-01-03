@@ -6,6 +6,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { Calendar } from '@/components/calendar/Calendar';
 import { ExpenseView } from '@/components/expense/ExpenseView';
 import { WarningBanner, MonthlyReflectionModal } from '@/components/ui';
+import { VercelLanding } from '@/components/VercelLanding';
 import type { Warning, Settings, MonthlyReflection } from '@/types';
 
 // ============================================
@@ -13,6 +14,22 @@ import type { Warning, Settings, MonthlyReflection } from '@/types';
 // ============================================
 
 export default function HomePage() {
+  // Check if running on Vercel (show landing page)
+  const [isVercel, setIsVercel] = useState(false);
+
+  useEffect(() => {
+    // Check if API is accessible (not on Vercel serverless)
+    fetch('/api/settings')
+      .then(res => {
+        if (!res.ok) setIsVercel(true);
+      })
+      .catch(() => setIsVercel(true));
+  }, []);
+
+  // Show landing page if on Vercel
+  if (isVercel) {
+    return <VercelLanding />;
+  }
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
